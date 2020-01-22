@@ -1,6 +1,9 @@
 # Windows stuff
 desktop.ini
 
+# Data stuff
+**/data/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
