@@ -22,7 +22,7 @@ class LangModel:
     def fit_corpus(self, corpus):
         """Learn the language model for the whole corpus.
 
-        The corpus consists of a list of sentences."""
+        The corpus consists of a list of sentences. """
         for s in corpus:
             self.fit_sentence(s)
         self.norm()
@@ -108,7 +108,6 @@ class Trigram(LangModel):
         self.rare = set()
         self.num_count = {}
         self.lunk_prob = log(unk_prob, 2)
-        self.num_word = 0
 
     def inc_word(self, previous, w):
         if previous not in self.model:
@@ -126,19 +125,30 @@ class Trigram(LangModel):
             else:
                 self.inc_word((sentencce[i - 2], sentencce[i - 1]), w)
             self.filter.inc_word(w)
-        self.inc_word((sentencce[-2], sentencce[-1]), 'END_OF_SENTENCE')
+        if len(sentencce) >= 2:
+            self.inc_word((sentencce[-2], sentencce[-1]), 'END_OF_SENTENCE')
+        elif len(sentencce) == 0:
+            self.inc_word(
+                ('START_OF_SENTENCE', 'START_OF_SENTENCE'), 'END_OF_SENTENCE')
+        else:
+            self.inc_word(
+                ('START_OF_SENTENCE', sentencce[i - 1]), 'END_OF_SENTENCE')
         self.filter.inc_word('END_OF_SENTENCE')
+        # print(self.model)
 
     def norm(self):
+        # import time
         for key in self.filter.model:
             if self.filter.model[key] >= self.num_gamma:
                 self.vocab_set.add(key)
             else:
                 self.rare.add(key)
+        self.vocab_set.add('START_OF_SENTENCE')
         self.vocab_set.add('UNK')
 
         # handling rare conditional words
-        for previous in list(self.model.keys()):
+        # t = time.time()
+        for i, previous in enumerate(list(self.model.keys())):
             if previous[0] in self.rare or previous[1] in self.rare:
                 prev = tuple(
                     w if w in self.vocab_set else 'UNK' for w in previous)
@@ -152,12 +162,16 @@ class Trigram(LangModel):
 
                 del self.model[previous]
 
+            # if (i + 1) % 1000 == 0:
+            #     print('process {} - use {} seconds'.format(i + 1, time.time() - t))
+            #     t = time.time()
+
         # make sure that when testing there is situation that is unk,unk
         if ('UNK', 'UNK') not in self.model:
             self.model[('UNK', 'UNK')] = {}
 
         # smoothing
-        for previous in list(self.model.keys()):
+        for i, previous in enumerate(list(self.model.keys())):
             tot = sum(self.model[previous].values())
 
             # unknown
@@ -168,25 +182,62 @@ class Trigram(LangModel):
                     self.model[previous]['UNK'] += self.model[previous][w]
                     del self.model[previous][w]
 
+            # make sure that when testing there is situation that is unk
+            if 'UNK' not in self.model[previous]:
+                self.model[previous]['UNK'] = 0.0
+
+            self.num_count[previous] = tot
+
             # smoothing
-            for w in self.vocab_set:
-                if w not in self.model[previous]:
-                    self.model[previous][w] = 0.0
-                self.model[previous][w] += self.lam
-                self.model[previous][w] /= (self.lam *
-                                            len(self.vocab_set) + tot)
+            # for w in self.vocab_set:
+            #     if w not in self.model[previous]:
+            #         self.model[previous][w] = 0.0
+            #     self.model[previous][w] += self.lam
+            #     self.model[previous][w] /= (self.lam *
+            #                                 len(self.vocab_set) + tot)
+
+            # if (i + 1) % 1000 == 0:
+            #     print('process {} - use {} seconds'.format(i + 1, time.time() - t))
+            #     t = time.time()
 
     def cond_logprob(self, word, previous, numOOV):
+        # print(numOOV)
+
         if len(previous) < 2:
             for _ in range(2 - len(previous)):
                 previous = ['START_OF_SENTENCE'] + previous
 
+        # prev = tuple(previous[len(previous)-2:])
         prev = tuple(
             w if w in self.vocab_set else 'UNK' for w in previous[len(previous)-2:])
-        if word in self.model[prev]:
-            return self.model[prev][word]
+        # apply smoothing here
+        if prev not in self.model:
+            prev = ('UNK', 'UNK')
+        # print(prev)
+        # print(word)
+        if self.lam:
+            if word in self.model[prev]:
+                return log(self.model[prev][word] + self.lam, 2) - \
+                    log(self.lam * (len(self.vocab_set) - 1) +
+                        self.num_count[prev], 2)
+            elif word in self.vocab_set:
+                return log(self.lam, 2) / log(self.lam * (len(self.vocab_set) - 1) + self.num_count[prev], 2)
+            else:
+                return log(self.model[prev]['UNK'] + self.lam, 2) - \
+                    log(self.lam * (len(self.vocab_set) - 1) + self.num_count[prev], 2) - \
+                    log(numOOV, 2)
+        # only for no smoothing
         else:
-            return log(self.model[previous]['UNK'], 2) - log(numOOV, 2)
+            if word in self.model[prev]:
+                return log(self.model[prev][word], 2) - log(self.num_count[prev], 2)
+            else:
+                try:
+                    return self.lunk_prob - log(numOOV, 2)
+                except ValueError:
+                    print(numOOV)
+                    print(prev)
+                    print(previous[len(previous) - 2:])
+                    print(word)
 
     def vocab(self):
-        return list(self.vocab_set)
+        return list(self.vocab_set - set('UNK') - set('START_OF_SENTENCE'))
