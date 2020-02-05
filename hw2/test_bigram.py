@@ -2,7 +2,7 @@ from data import *
 import lm
 
 
-def learn_bigram(data, gamma=0, smooth=1):
+def learn_bigram(data, print_info=False, sample_sentence=False, gamma=0, smooth=1):
     """Learns a bigram model from data.train.
 
     It also evaluates the model on data.dev and data.test, along with generating
@@ -10,16 +10,23 @@ def learn_bigram(data, gamma=0, smooth=1):
     """
     bigram = lm.Bigram(gamma=gamma, smooth=smooth)
     bigram.fit_corpus(data.train)
-    print("vocab:", len(bigram.vocab()))
-    # evaluate on train, test, and dev
-    print("train:", bigram.perplexity(data.train))
-    print("dev  :", bigram.perplexity(data.dev))
-    print("test :", bigram.perplexity(data.test))
-    from generator import Sampler
-    sampler = Sampler(bigram)
-    print("sample: ", " ".join(str(x) for x in sampler.sample_sentence([])))
-    print("sample: ", " ".join(str(x) for x in sampler.sample_sentence([])))
-    print("sample: ", " ".join(str(x) for x in sampler.sample_sentence([])))
+    if print_info:
+        print("vocab:", len(bigram.vocab()))
+        # evaluate on train, test, and dev
+        print("train:", bigram.perplexity(data.train))
+        print("dev  :", bigram.perplexity(data.dev))
+        print("test :", bigram.perplexity(data.test))
+
+    if sample_sentence:
+        from generator import Sampler
+        sampler = Sampler(bigram)
+        print("sample: ", " ".join(str(x)
+                                   for x in sampler.sample_sentence([])))
+        print("sample: ", " ".join(str(x)
+                                   for x in sampler.sample_sentence([])))
+        print("sample: ", " ".join(str(x)
+                                   for x in sampler.sample_sentence([])))
+
     return bigram
 
 
@@ -33,7 +40,7 @@ if __name__ == "__main__":
     print(dname)
     data = read_texts("data/corpora.tar.gz", dname)
     # datas.append(data)
-    model = learn_bigram(data, gamma=0, smooth=0.001)
+    model = learn_bigram(data, gamma=0, smooth=1)
     # models.append(model)
     # compute the perplexity of all pairs
     # n = len(dnames)

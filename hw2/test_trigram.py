@@ -2,24 +2,33 @@ from data import *
 import lm
 
 
-def learn_trigram(data, gamma=0, smooth=1):
+def learn_trigram(data, print_info=False, sample_sentence=False,
+                  gamma=0, smooth=1, lambda1=0.65, lambda2=0.25):
     """Learns a trigram model from data.train.
 
     It also evaluates the model on data.dev and data.test, along with generating
     some sample sentences from the model.
     """
-    trigram = lm.Trigram(gamma=gamma, smooth=smooth)
+    trigram = lm.Trigram(gamma=gamma, smooth=smooth,
+                         lambda1=lambda1, lambda2=lambda2)
     trigram.fit_corpus(data.train)
-    print("vocab:", len(trigram.vocab()))
-    # evaluate on train, test, and dev
-    print("train:", trigram.perplexity(data.train))
-    print("dev  :", trigram.perplexity(data.dev))
-    print("test :", trigram.perplexity(data.test))
-    from generator import Sampler
-    sampler = Sampler(trigram)
-    print("sample: ", " ".join(str(x) for x in sampler.sample_sentence([])))
-    print("sample: ", " ".join(str(x) for x in sampler.sample_sentence([])))
-    print("sample: ", " ".join(str(x) for x in sampler.sample_sentence([])))
+    if print_info:
+        print("vocab:", len(trigram.vocab()))
+        # evaluate on train, test, and dev
+        print("train:", trigram.perplexity(data.train))
+        print("dev  :", trigram.perplexity(data.dev))
+        print("test :", trigram.perplexity(data.test))
+
+    if sample_sentence:
+        from generator import Sampler
+        sampler = Sampler(trigram)
+        print("sample: ", " ".join(str(x)
+                                   for x in sampler.sample_sentence([])))
+        print("sample: ", " ".join(str(x)
+                                   for x in sampler.sample_sentence([])))
+        print("sample: ", " ".join(str(x)
+                                   for x in sampler.sample_sentence([])))
+
     return trigram
 
 
@@ -33,7 +42,8 @@ if __name__ == "__main__":
     print(dname)
     data = read_texts("data/corpora.tar.gz", dname)
     # datas.append(data)
-    model = learn_trigram(data, gamma=0, smooth=0.001)
+    model = learn_trigram(data, gamma=0, smooth=0.1,
+                          sample_sentence=True, print_info=True)
     # models.append(model)
     # compute the perplexity of all pairs
     # n = len(dnames)
