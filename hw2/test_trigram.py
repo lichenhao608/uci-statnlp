@@ -33,35 +33,35 @@ def learn_trigram(data, print_info=False, sample_sentence=False,
 
 
 if __name__ == "__main__":
-    dname = "brown"
-    # datas = []
-    # models = []
-    # # Learn the models for each of the domains, and evaluate it
-    # for dname in dnames:
-    print("-----------------------")
-    print(dname)
-    data = read_texts("data/corpora.tar.gz", dname)
-    # datas.append(data)
-    model = learn_trigram(data, gamma=0, smooth=0.1,
-                          sample_sentence=True, print_info=True)
-    # models.append(model)
+    dnames = ["brown", "reuters", "gutenberg"]
+    datas = []
+    models = []
+    # Learn the models for each of the domains, and evaluate it
+    for dname in dnames:
+        print("-----------------------")
+        print(dname)
+        data = read_texts("data/corpora.tar.gz", dname)
+        datas.append(data)
+        model = learn_trigram(data, gamma=0, smooth=0.0001,
+                              print_info=True)
+        models.append(model)
     # compute the perplexity of all pairs
-    # n = len(dnames)
-    # perp_dev = np.zeros((n, n))
-    # perp_test = np.zeros((n, n))
-    # perp_train = np.zeros((n, n))
-    # for i in range(n):
-    #     for j in range(n):
-    #         perp_dev[i][j] = models[i].perplexity(datas[j].dev)
-    #         perp_test[i][j] = models[i].perplexity(datas[j].test)
-    #         perp_train[i][j] = models[i].perplexity(datas[j].train)
+    n = len(dnames)
+    perp_dev = np.zeros((n, n))
+    perp_test = np.zeros((n, n))
+    perp_train = np.zeros((n, n))
+    for i in range(n):
+        for j in range(n):
+            perp_dev[i][j] = models[i].perplexity(datas[j].dev)
+            perp_test[i][j] = models[i].perplexity(datas[j].test)
+            perp_train[i][j] = models[i].perplexity(datas[j].train)
 
-    # print("-------------------------------")
-    # print("x train")
-    # print_table(perp_train, dnames, dnames, "table-train.tex")
-    # print("-------------------------------")
-    # print("x dev")
-    # print_table(perp_dev, dnames, dnames, "table-dev.tex")
-    # print("-------------------------------")
-    # print("x test")
-    # print_table(perp_test, dnames, dnames, "table-test.tex")
+    print("-------------------------------")
+    print("x train")
+    print_table(perp_train, dnames, dnames, "table-train.tex")
+    print("-------------------------------")
+    print("x dev")
+    print_table(perp_dev, dnames, dnames, "table-dev.tex")
+    print("-------------------------------")
+    print("x test")
+    print_table(perp_test, dnames, dnames, "table-test.tex")

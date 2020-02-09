@@ -346,19 +346,14 @@ class Trigram(LangModel):
                     print(word)
 
     def cond_logprob(self, word, previous, numOOV):
-        try:
-            if not numOOV and word == 'UNK':
-                return self.w11 * self._cond_logprob(word, previous, numOOV) + \
-                    self.w22 * self.bi.cond_logprob(word, previous, numOOV)
-            else:
-                return self.w1 * self._cond_logprob(word, previous, numOOV) + \
-                    self.w2 * self.bi.cond_logprob(word, previous, numOOV) + \
-                    self.w3 * \
-                    self.bi.filter.cond_logprob(word, previous, numOOV)
-        except ValueError:
-            print(word)
-            print(word in self.bi.vocab_set)
-            print(previous)
+        if not numOOV and word == 'UNK':
+            return self.w11 * self._cond_logprob(word, previous, numOOV) + \
+                self.w22 * self.bi.cond_logprob(word, previous, numOOV)
+        else:
+            return self.w1 * self._cond_logprob(word, previous, numOOV) + \
+                self.w2 * self.bi.cond_logprob(word, previous, numOOV) + \
+                self.w3 * \
+                self.bi.filter.cond_logprob(word, previous, numOOV)
 
     def vocab(self):
         return self.bi.vocab()
