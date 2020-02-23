@@ -16,43 +16,44 @@ def run_viterbi_test():
     import numpy as np
     from itertools import product
 
-    maxN = 7 # maximum length of a sentence (min is 1)
-    maxL = 4 # maximum number of labels (min is 2)
-    num_tests = 1000 # number of sentences to generate
+    maxN = 7  # maximum length of a sentence (min is 1)
+    maxL = 4  # maximum number of labels (min is 2)
+    num_tests = 1000  # number of sentences to generate
     random.seed(0)
-    tolerance = 1e-5 # how close do the scores have to be?
+    tolerance = 1e-5  # how close do the scores have to be?
 
-    emission_var = 1.0 # variance of the gaussian generating emission scores
-    trans_var = 1.0 # variance of the gaussian generating transition scores
+    emission_var = 1.0  # variance of the gaussian generating emission scores
+    trans_var = 1.0  # variance of the gaussian generating transition scores
 
-    passed_y = 0 # how many times the correct sequence was predicted
-    passed_s = 0 # how many times the correct score was returned
+    passed_y = 0  # how many times the correct sequence was predicted
+    passed_s = 0  # how many times the correct score was returned
 
     for t in range(num_tests):
         N = random.randint(1, maxN+1)
         L = random.randint(2, maxL+1)
 
         # Generate the scores
-        emission_scores = random.normal(0.0, emission_var, (N,L))
-        trans_scores = random.normal(0.0, trans_var, (L,L))
+        emission_scores = random.normal(0.0, emission_var, (N, L))
+        trans_scores = random.normal(0.0, trans_var, (L, L))
         start_scores = random.normal(0.0, trans_var, L)
         end_scores = random.normal(0.0, trans_var, L)
 
         # run viterbi
-        (viterbi_s,viterbi_y) = run_viterbi(emission_scores, trans_scores, start_scores, end_scores)
+        (viterbi_s, viterbi_y) = run_viterbi(
+            emission_scores, trans_scores, start_scores, end_scores)
         # print "Viterbi", viterbi_s, viterbi_y
 
         # compute the best sequence and score
         best_y = []
         best_s = -np.inf
-        for y in product(range(L), repeat=N): # all possible ys
+        for y in product(range(L), repeat=N):  # all possible ys
             # compute its score
             score = 0.0
             score += start_scores[y[0]]
             for i in range(N-1):
                 score += trans_scores[y[i], y[i+1]]
-                score += emission_scores[i,y[i]]
-            score += emission_scores[N-1,y[N-1]]
+                score += emission_scores[i, y[i]]
+            score += emission_scores[N-1, y[N-1]]
             score += end_scores[y[N-1]]
             # update the best
             if score > best_s:
@@ -65,7 +66,8 @@ def run_viterbi_test():
         for i in range(len(best_y)):
             if viterbi_y[i] != best_y[i]:
                 match_y = False
-        if match_y: passed_y += 1
+        if match_y:
+            passed_y += 1
         # the scores should also be very close
         if abs(viterbi_s-best_s) < tolerance:
             passed_s += 1
